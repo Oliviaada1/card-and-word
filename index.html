@@ -12,7 +12,7 @@
   <!-- Babel Compiler -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
-<body class="bg-slate-900 text-white min-h-screen">
+<body class="bg-slate-900 text-white min-h-screen select-none">
   <div id="root"></div>
 
   <script type="text/babel">
@@ -52,11 +52,15 @@
     ];
 
     function App() {
-      const [players, setPlayers] = React.useState(['لاعب 1', 'لاعب 2', 'لاعب 3']);
+      // قائمة اللاعبين تبدأ فارغة بناء على طلبك
+      const [players, setPlayers] = React.useState([]);
       const [newPlayerName, setNewPlayerName] = React.useState('');
+      const [scores, setScores] = React.useState({});
+      
       const [activePlayerIndex, setActivePlayerIndex] = React.useState(0);
       const [isReversed, setIsReversed] = React.useState(false);
 
+      const [categoriesDeck, setCategoriesDeck] = React.useState(CATEGORIES);
       const [currentCategory, setCurrentCategory] = React.useState(null);
       const [currentLetter, setCurrentLetter] = React.useState(null);
       const [activeChaos, setActiveChaos] = React.useState(null);
@@ -64,30 +68,33 @@
 
       const [timer, setTimer] = React.useState(10);
       const [isTimerRunning, setIsTimerRunning] = React.useState(false);
-      const [gamePhase, setGamePhase] = React.useState('IDLE');
+      const [gamePhase, setGamePhase] = React.useState('IDLE'); // IDLE, PRIORITY, DECISION_PRIORITY, DECISION_OPEN
 
-      const [chaosEffects, setChaosEffects] = React.useState({
-        bombMode: false,
-        radarBlockedPlayer: null,
-        frozenPlayer: null
-      });
-
+      // إدارة الوقت
       React.useEffect(() => {
         let interval = null;
         if (isTimerRunning && timer > 0) {
           interval = setInterval(() => setTimer((t) => t - 1), 1000);
         } else if (timer === 0 && isTimerRunning) {
           clearInterval(interval);
+          setIsTimerRunning(false);
           if (gamePhase === 'PRIORITY') {
-            setGamePhase('OPEN_TABLE');
-            setTimer(5);
-          } else if (gamePhase === 'OPEN_TABLE') {
-            setIsTimerRunning(false);
-            setGamePhase('IDLE');
+            setGamePhase('DECISION_PRIORITY');
           }
         }
         return () => clearInterval(interval);
       }, [isTimerRunning, timer, gamePhase]);
+
+      const addPlayer = () => {
+        if (newPlayerName.trim() !== '') {
+          const name = newPlayerName.trim();
+          if (!players.includes(name)) {
+            setPlayers([...players, name]);
+            setScores((prev) => ({ ...prev, [name]: 0 }));
+            setNewPlayerName('');
+          }
+        }
+      };
 
       const getNextPlayerIndex = (currentIdx) => {
         if (players.length === 0) return 0;
@@ -97,48 +104,59 @@
       };
 
       const advanceTurn = () => {
-        let nextIdx = getNextPlayerIndex(activePlayerIndex);
-        if (chaosEffects?.radarBlockedPlayer === players[nextIdx] || chaosEffects?.frozenPlayer === players[nextIdx]) {
-          setChaosEffects((prev) => ({
-            ...prev,
-            radarBlockedPlayer: prev?.radarBlockedPlayer === players[nextIdx] ? null : prev?.radarBlockedPlayer,
-            frozenPlayer: prev?.frozenPlayer === players[nextIdx] ? null : prev?.frozenPlayer
-          }));
-          nextIdx = getNextPlayerIndex(nextIdx);
-        }
-        setActivePlayerIndex(nextIdx);
+        setActivePlayerIndex(getNextPlayerIndex(activePlayerIndex));
+        setGamePhase('IDLE');
+        setTimer(10);
       };
 
       const drawRound = () => {
-        setCurrentCategory(CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)]);
+        if (players.length === 0) return;
+
+        let availableCategories = categoriesDeck.length > 0 ? categoriesDeck : CATEGORIES;
+        const randomIndex = Math.floor(Math.random() * availableCategories.length);
+        const selectedCategory = availableCategories[randomIndex];
+
+        // تحديث مجموعة الكروت
+        setCategoriesDeck(availableCategories.filter((_, idx) => idx !== randomIndex));
+
+        setCurrentCategory(selectedCategory);
         setCurrentLetter(LETTERS[Math.floor(Math.random() * LETTERS.length)]);
 
-        const isBomb = chaosEffects?.bombMode || false;
-        setTimer(isBomb ? 2 : 10);
+        setTimer(10);
         setGamePhase('PRIORITY');
         setIsTimerRunning(true);
 
-        if (Math.random() < 0.3) {
+        if (Math.random() < 0.25) {
           const randomChaos = CHAOS_CARDS[Math.floor(Math.random() * CHAOS_CARDS.length)];
           setActiveChaos(randomChaos);
           setShowChaosModal(true);
           if (randomChaos.id === 'reverse') setIsReversed((prev) => !prev);
-          if (randomChaos.id === 'bomb') setChaosEffects((prev) => ({ ...prev, bombMode: true }));
         } else {
           setShowChaosModal(false);
           setActiveChaos(null);
         }
       };
 
-      const addPlayer = () => {
-        if (newPlayerName.trim() !== '') {
-          setPlayers([...players, newPlayerName.trim()]);
-          setNewPlayerName('');
+      // إضافة نقطة للاعب والانتقال للدور التالي
+      const handleAwardPoint = (playerName) => {
+        setScores((prev) => ({
+          ...prev,
+          [playerName]: (prev[playerName] || 0) + 1
+        }));
+        advanceTurn();
+      };
+
+      // في حالة لم يجب أحد وإعادة الفئة لأسفل المجموعة
+      const handleNoWinner = () => {
+        if (currentCategory) {
+          setCategoriesDeck((prev) => [...prev, currentCategory]);
         }
+        advanceTurn();
       };
 
       return (
         <div className="min-h-screen p-4 flex flex-col items-center justify-between max-w-xl mx-auto">
+          {/* الهيدر */}
           <header className="w-full text-center my-2">
             <h1 className="text-3xl font-extrabold text-amber-400 mb-2">🎲 كارت وكلمة</h1>
             {players.length > 0 && (
@@ -150,40 +168,115 @@
             )}
           </header>
 
-          <main className="w-full flex flex-col gap-4 my-auto">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-[#116b32] border-2 border-emerald-400 rounded-xl p-4 min-h-[160px] flex flex-col justify-center items-center text-center">
-                <span className="text-xs bg-emerald-900/60 text-emerald-200 px-2 py-0.5 rounded-full mb-2">الفئة</span>
-                <p className="text-base font-bold">{currentCategory || "اضغط سحب دور"}</p>
-              </div>
-
-              <div className="bg-[#003c8f] border-2 border-blue-400 rounded-xl p-4 min-h-[160px] flex flex-col justify-center items-center text-center">
-                <span className="text-xs bg-blue-900/60 text-blue-200 px-2 py-0.5 rounded-full mb-2">الحرف</span>
-                <span className="text-5xl font-black text-amber-300">{currentLetter || "؟"}</span>
-              </div>
-            </div>
-
-            <div className="bg-slate-800 p-3 rounded-xl text-center border border-slate-700">
-              <div className="text-xs text-gray-400 mb-1">
-                {gamePhase === 'PRIORITY' && `أولوية الإجابة لـ (${players[activePlayerIndex]})`}
-                {gamePhase === 'OPEN_TABLE' && "🔥 المزاد مفتوح للجميع!"}
-                {gamePhase === 'IDLE' && "جاهز للعب"}
-              </div>
-              <div className={`text-3xl font-black ${timer <= 3 ? 'text-red-500 animate-pulse' : 'text-amber-400'}`}>
-                00:{timer < 10 ? `0${timer}` : timer}
+          {/* محتوى اللعبة */}
+          {players.length === 0 ? (
+            <div className="bg-slate-800 border border-slate-700 p-6 rounded-2xl w-full text-center my-auto">
+              <h2 className="text-xl font-bold text-amber-300 mb-3">أضف اللاعبين للبدء 👥</h2>
+              <div className="flex gap-2 mb-4">
+                <input
+                  type="text"
+                  placeholder="اسم اللاعب..."
+                  value={newPlayerName}
+                  onChange={(e) => setNewPlayerName(e.target.value)}
+                  className="flex-1 bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white"
+                />
+                <button onClick={addPlayer} className="bg-emerald-600 hover:bg-emerald-500 font-bold px-4 py-2 rounded-lg">إضافة</button>
               </div>
             </div>
+          ) : (
+            <main className="w-full flex flex-col gap-4 my-auto">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-[#116b32] border-2 border-emerald-400 rounded-xl p-4 min-h-[150px] flex flex-col justify-center items-center text-center">
+                  <span className="text-xs bg-emerald-900/60 text-emerald-200 px-2 py-0.5 rounded-full mb-2">الفئة</span>
+                  <p className="text-base font-bold">{currentCategory || "اضغط سحب دور"}</p>
+                </div>
 
-            <div className="flex gap-2">
-              <button onClick={drawRound} className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl">
-                🎴 سحب دور جديد
-              </button>
-              <button onClick={advanceTurn} className="bg-slate-700 hover:bg-slate-600 text-white font-semibold px-4 py-3 rounded-xl">
-                تخطي ⏭️
-              </button>
-            </div>
-          </main>
+                <div className="bg-[#003c8f] border-2 border-blue-400 rounded-xl p-4 min-h-[150px] flex flex-col justify-center items-center text-center">
+                  <span className="text-xs bg-blue-900/60 text-blue-200 px-2 py-0.5 rounded-full mb-2">الحرف</span>
+                  <span className="text-5xl font-black text-amber-300">{currentLetter || "؟"}</span>
+                </div>
+              </div>
 
+              {/* العداد والتحكم */}
+              <div className="bg-slate-800 p-3 rounded-xl text-center border border-slate-700">
+                <div className="text-xs text-gray-400 mb-1">
+                  {gamePhase === 'PRIORITY' && `أولوية الإجابة لـ: (${players[activePlayerIndex]})`}
+                  {gamePhase === 'DECISION_PRIORITY' && "هل أجاب صاحب الدور؟"}
+                  {gamePhase === 'DECISION_OPEN' && "اختر من الفائز بالنقطة:"}
+                  {gamePhase === 'IDLE' && "جاهز للدور الجديد"}
+                </div>
+                <div className={`text-4xl font-black ${timer <= 3 && isTimerRunning ? 'text-red-500 animate-pulse' : 'text-amber-400'}`}>
+                  00:{timer < 10 ? `0${timer}` : timer}
+                </div>
+              </div>
+
+              {/* أزرار الإجراءات حسب الحالة */}
+              {gamePhase === 'PRIORITY' && (
+                <button
+                  onClick={() => { setIsTimerRunning(false); setGamePhase('DECISION_PRIORITY'); }}
+                  className="w-full bg-blue-600 hover:bg-blue-500 font-bold py-3 rounded-xl"
+                >
+                  حسم الإجابة ⏱️
+                </button>
+              )}
+
+              {gamePhase === 'DECISION_PRIORITY' && (
+                <div className="flex flex-col gap-2 bg-slate-800 p-3 rounded-xl border border-slate-700">
+                  <p className="text-center text-sm font-bold">هل أجاب ({players[activePlayerIndex]}) إجابة صحيحة؟</p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleAwardPoint(players[activePlayerIndex])}
+                      className="flex-1 bg-emerald-600 hover:bg-emerald-500 font-bold py-2 rounded-lg"
+                    >
+                      نعم (+1 نقطة) 👍
+                    </button>
+                    <button
+                      onClick={() => setGamePhase('DECISION_OPEN')}
+                      className="flex-1 bg-amber-600 hover:bg-amber-500 font-bold py-2 rounded-lg"
+                    >
+                      لا (فتح المزاد) 📢
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {gamePhase === 'DECISION_OPEN' && (
+                <div className="bg-slate-800 p-3 rounded-xl border border-slate-700 text-center">
+                  <p className="text-sm font-bold mb-2">من أجاب أولاً من الطاولة؟</p>
+                  <div className="flex flex-wrap gap-2 justify-center mb-3">
+                    {players.map((p, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => handleAwardPoint(p)}
+                        className="bg-blue-600 hover:bg-blue-500 px-3 py-1.5 rounded-lg text-sm font-bold"
+                      >
+                        {p}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    onClick={handleNoWinner}
+                    className="w-full bg-red-800 hover:bg-red-700 text-xs font-bold py-2 rounded-lg"
+                  >
+                    لا أحد أجاب (إعادة الكرت لأسفل المجموعة) 🔄
+                  </button>
+                </div>
+              )}
+
+              {gamePhase === 'IDLE' && (
+                <div className="flex gap-2">
+                  <button onClick={drawRound} className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl">
+                    🎴 سحب دور جديد
+                  </button>
+                  <button onClick={advanceTurn} className="bg-slate-700 hover:bg-slate-600 text-white font-semibold px-4 py-3 rounded-xl">
+                    تخطي ⏭️
+                  </button>
+                </div>
+              )}
+            </main>
+          )}
+
+          {/* كروت الفوضى */}
           {showChaosModal && activeChaos && (
             <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
               <div className="bg-[#800000] border-2 border-red-500 rounded-2xl p-5 max-w-xs w-full text-center">
@@ -196,22 +289,32 @@
             </div>
           )}
 
+          {/* لوحة التحكم باللاعبين والنقاط */}
           <footer className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 mt-4">
-            <div className="flex gap-2 mb-2">
+            <div className="flex gap-2 mb-3">
               <input
                 type="text"
-                placeholder="لاعب جديد..."
+                placeholder="إضافة لاعب إضافي..."
                 value={newPlayerName}
                 onChange={(e) => setNewPlayerName(e.target.value)}
                 className="flex-1 bg-slate-900 border border-slate-600 rounded px-2 py-1 text-sm text-white"
               />
               <button onClick={addPlayer} className="bg-emerald-600 text-sm px-3 py-1 rounded font-bold">إضافة</button>
             </div>
-            <div className="flex flex-wrap gap-1">
+            
+            <div className="flex flex-wrap gap-2">
               {players.map((p, idx) => (
-                <span key={idx} className={`text-xs px-2 py-1 rounded ${idx === activePlayerIndex ? 'bg-emerald-900 border border-emerald-500' : 'bg-slate-900'}`}>
-                  {p}
-                </span>
+                <div
+                  key={idx}
+                  className={`text-xs px-3 py-1.5 rounded-lg flex items-center gap-2 border ${
+                    idx === activePlayerIndex ? 'bg-emerald-900 border-emerald-400 text-emerald-200 font-bold' : 'bg-slate-900 border-slate-700'
+                  }`}
+                >
+                  <span>{p}</span>
+                  <span className="bg-amber-400 text-slate-950 px-1.5 py-0.5 rounded-full text-[10px] font-black">
+                    {scores[p] || 0} pts
+                  </span>
+                </div>
               ))}
             </div>
           </footer>

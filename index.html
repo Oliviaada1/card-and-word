@@ -52,7 +52,6 @@
     ];
 
     function App() {
-      // قائمة اللاعبين تبدأ فارغة بناء على طلبك
       const [players, setPlayers] = React.useState([]);
       const [newPlayerName, setNewPlayerName] = React.useState('');
       const [scores, setScores] = React.useState({});
@@ -68,9 +67,8 @@
 
       const [timer, setTimer] = React.useState(10);
       const [isTimerRunning, setIsTimerRunning] = React.useState(false);
-      const [gamePhase, setGamePhase] = React.useState('IDLE'); // IDLE, PRIORITY, DECISION_PRIORITY, DECISION_OPEN
+      const [gamePhase, setGamePhase] = React.useState('IDLE');
 
-      // إدارة الوقت
       React.useEffect(() => {
         let interval = null;
         if (isTimerRunning && timer > 0) {
@@ -96,6 +94,20 @@
         }
       };
 
+      // ميزة حذف لاعب في أي وقت
+      const removePlayer = (nameToRemove) => {
+        const updatedPlayers = players.filter((p) => p !== nameToRemove);
+        setPlayers(updatedPlayers);
+        
+        const newScores = { ...scores };
+        delete newScores[nameToRemove];
+        setScores(newScores);
+
+        if (activePlayerIndex >= updatedPlayers.length) {
+          setActivePlayerIndex(0);
+        }
+      };
+
       const getNextPlayerIndex = (currentIdx) => {
         if (players.length === 0) return 0;
         return !isReversed
@@ -116,7 +128,6 @@
         const randomIndex = Math.floor(Math.random() * availableCategories.length);
         const selectedCategory = availableCategories[randomIndex];
 
-        // تحديث مجموعة الكروت
         setCategoriesDeck(availableCategories.filter((_, idx) => idx !== randomIndex));
 
         setCurrentCategory(selectedCategory);
@@ -137,7 +148,6 @@
         }
       };
 
-      // إضافة نقطة للاعب والانتقال للدور التالي
       const handleAwardPoint = (playerName) => {
         setScores((prev) => ({
           ...prev,
@@ -146,7 +156,6 @@
         advanceTurn();
       };
 
-      // في حالة لم يجب أحد وإعادة الفئة لأسفل المجموعة
       const handleNoWinner = () => {
         if (currentCategory) {
           setCategoriesDeck((prev) => [...prev, currentCategory]);
@@ -289,7 +298,7 @@
             </div>
           )}
 
-          {/* لوحة التحكم باللاعبين والنقاط */}
+          {/* لوحة التحكم باللاعبين والنقاط وحذفهم */}
           <footer className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 mt-4">
             <div className="flex gap-2 mb-3">
               <input
@@ -306,7 +315,7 @@
               {players.map((p, idx) => (
                 <div
                   key={idx}
-                  className={`text-xs px-3 py-1.5 rounded-lg flex items-center gap-2 border ${
+                  className={`text-xs px-2.5 py-1.5 rounded-lg flex items-center gap-2 border ${
                     idx === activePlayerIndex ? 'bg-emerald-900 border-emerald-400 text-emerald-200 font-bold' : 'bg-slate-900 border-slate-700'
                   }`}
                 >
@@ -314,6 +323,13 @@
                   <span className="bg-amber-400 text-slate-950 px-1.5 py-0.5 rounded-full text-[10px] font-black">
                     {scores[p] || 0} pts
                   </span>
+                  <button
+                    onClick={() => removePlayer(p)}
+                    className="text-red-400 hover:text-red-200 font-bold ml-1 text-sm"
+                    title="حذف اللاعب"
+                  >
+                    ✕
+                  </button>
                 </div>
               ))}
             </div>

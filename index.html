@@ -9,6 +9,8 @@
   <!-- React & React DOM -->
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <!-- Canvas Confetti للألعاب النارية -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <!-- Babel Compiler -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
@@ -35,7 +37,6 @@
       "شيء لونه أحمر",
       "حاجة تلبسها في الشتاء بس",
       "حيوان أو حشرة تخاف منها",
-      // فئات جديدة مضافة
       "شيء تشتريه من السوبرماركت / الدكان",
       "دولة عربية أو أجنبية",
       "حاجة تلقاها في المطبخ",
@@ -46,7 +47,6 @@
 
     const LETTERS = ['أ', 'ب', 'ت', 'ج', 'ح', 'خ', 'د', 'ر', 'ز', 'س', 'ش', 'ص', 'ط', 'ع', 'غ', 'ف', 'م', 'ن'];
 
-    // قاعدة بيانات الإجابات المباشرة والصريحة لكل الفئات الحالية والجديدة
     const SUGGESTIONS = {
       "اسم ولد": { 'أ':'أحمد', 'ب':'باسم', 'ت':'تامر', 'ج':'جلال', 'ح':'حسام', 'خ':'خالد', 'د':'داوود', 'ر':'رمزي', 'ز':'زياد', 'س':'سامي', 'ش':'شريف', 'ص':'صابر', 'ط':'طارق', 'ع':'عادل', 'غ':'غسان', 'ف':'فيصل', 'م':'محمد', 'ن':'ناصر' },
       "اسم بنت": { 'أ':'أمل', 'ب':'بسمة', 'ت':'تسنيم', 'ج':'جميلة', 'ح':'حنين', 'خ':'خديجة', 'د':'داليا', 'ر':'ريم', 'ز':'زينب', 'س':'سارة', 'ش':'شهد', 'ص':'صفاء', 'ط':'طيبة', 'ع':'عائشة', 'غ':'غادة', 'ف':'فاطمة', 'م':'مريم', 'ن':'نور' },
@@ -66,33 +66,33 @@
       "شيء نطيّبوه أو نديروه في رمضان": { 'أ':'أرز', 'ب':'بوريك', 'ت':'تمر', 'ج':'جلاب', 'ح':'حلوى', 'خ':'خبزة', 'د':'دششة', 'ر':'رشتة', 'ز':'زلابية', 'س':'سلطة', 'ش':'شوربة', 'ص':'صينية', 'ط':'طاجين', 'ع':'عصيدة', 'غ':'غريبة', 'ف':'فتات', 'م':'محشي', 'ن':'نويصرة' },
       "أكثر شيء يخلّي الوالد أو الوالدة يتعصبوا": { 'أ':'إهمال', 'ب':'براد مفتوح', 'ت':'تأخير', 'ج':'جواب رد', 'ح':'حس عالي', 'خ':'خراب', 'د':'دوشة', 'ر':'رد لسان', 'ز':'زبلة', 'س':'سهر', 'ش':'شجار', 'ص':'صوت عالي', 'ط':'طيش', 'ع':'عدم احترام', 'غ':'غياب', 'ف':'فوضى', 'م':'موبايل', 'ن':'نوم زيادة' },
       "عذر أو سبّلة تقولها لما تعطّل على موعدك": { 'أ':'أزحمة', 'ب':'بنشر', 'ت':'تاكسي ما لقيتش', 'ج':'جاري عطلني', 'ح':'حادث', 'خ':'خربت السيارة', 'د':'دوخة', 'ر':'رحت ضعت', 'ز':'زحمة', 'س':'سيارة ما ولعتش', 'ش':'شحن كمل', 'ص':'صحيت مؤخر', 'ط':'طريق واقفة', 'ع':'عطلة', 'غ':'غلق باب', 'ف':'فلوس نسحب', 'م':'مطر', 'ن':'نسيت' },
-      
-      // اقتراحات الفئات الجديدة المضافة:
       "شيء تشتريه من السوبرماركت / الدكان": { 'أ':'أرز', 'ب':'بسكويت', 'ت':'تونة', 'ج':'جبنة', 'ح':'حليب', 'خ':'خبز', 'د':'دقيق', 'ر':'رقائق بطاطس', 'ز':'زيت', 'س':'سكر', 'ش':'شاي', 'ص':'صابون', 'ط':'طماطم علب', 'ع':'عصير', 'غ':'غسول', 'ف':'فول علب', 'م':'ماء', 'ن':'نيوتيلا' },
-      "دولة عربية أو أجنبية": { 'أ':'ألجيريا (الجزائر)', 'ب':'البحرين / بلجيكا', 'ت':'تونس / تركيا', 'ج':'جيبوتي', 'ح':'حبشة (إثيوبيا)', 'خ':'خارجية (قطر/عمان)', 'د':'دنمارك', 'ر':'روسيا / رومانية', 'ز':'زيمبابوي', 'س':'سعودية / سوريا', 'ش':'شيلي', 'ص':'صين / صومال', 'ط':'طاجيكستان', 'ع':'عمان / عراق', 'غ':'غانا / غينيا', 'ف':'فرنسا / فلسطين', 'م':'مصر / المغرب', 'ن':'نرويج / النمسا' },
-      "حاجة تلقاها في المطبخ": { 'أ':'أواني', 'ب':'براد', 'ت':'تنجرة (طنجرة)', 'ج':'جلابة / جلاية', 'ح':'حوض غسيل', 'خ':'خلاط', 'د':'دورق', 'ر':'رفوف', 'ز':'زيت', 'س':'سكين', 'ش':'شوكة', 'ص':'صحن', 'ط':'طاولة', 'ع':'عصارة', 'غ':'غلاية', 'ف':'فرن', 'م':'ملعقة', 'ن':'نمكدان (ملاحة)' },
-      "صفة حلوة أو شينة في البنادم": { 'أ':'أمين / أناني', 'ب':'بخيل / بار', 'ت':'تسامح / تكبر', 'ج':'جبان / كريم (جميل)', 'ح':'حسود / حنون', 'خ':'خائن / خلوق', 'د':'دقيق / دنيء', 'ر':'رحيم / رذيل', 'ز':'زاهد', 'س':'سريع الغضب / سموح', 'ش':'شجاع / شرير', 'ص':'صادق / صبور', 'ط':'طيب / طماع', 'ع':'عادل / عنيد', 'غ':'غدار / غبي', 'ف':'فظ / فطن', 'م':'منافق / محترم', 'ن':'نذل / نقي' },
-      "شيء نلقوه في البحر أو الشاطئ": { 'أ':'أمواج', 'ب':'بحر', 'ت':'تراب (رمل)', 'ج':'جمبري', 'ح':'حوت', 'خ':'خيمة شاطئ', 'د':'دلفين', 'ر':'رمل', 'ز':'زوارق', 'س':'سلطعون', 'ش':'شمسية', 'ص':'صدف', 'ط':'طحالب', 'ع':'عوامة', 'غ':'غواص', 'ف':'فقمة', 'م':'مرجان', 'ن':'نورس' },
-      "مشروب بارد أو ساخن": { 'أ':'أنانا كولا', 'ب':'بيبسي', 'ت':'توت (عصير)', 'ج':'راني جوافة', 'ح':'حليب دافئ', 'خ':'خوبيز / خروب', 'د':'دارسين (قرفة)', 'ر':'رمان بارد', 'ز':'زنجبيل ساخن', 'س':'سبرايت', 'ش':'شاهي', 'ص':'سحلب (صحلب)', 'ط':'طاقة (مشروب)', 'ع':'عصير برتقال', 'غ':'غازيات', 'ف':'فراولة عصير', 'م':'ماء / موكا', 'ن':'نسكافيه' }
+      "دولة عربية أو أجنبية": { 'أ':'ألجيريا', 'ب':'البحرين', 'ت':'تونس', 'ج':'جيبوتي', 'ح':'حبشة', 'خ':'خارجية', 'د':'دنمارك', 'ر':'روسيا', 'ز':'زيمبابوي', 'س':'سعودية', 'ش':'شيلي', 'ص':'صين', 'ط':'طاجيكستان', 'ع':'عمان', 'غ':'غانا', 'ف':'فرنسا', 'م':'مصر', 'ن':'نرويج' },
+      "حاجة تلقاها في المطبخ": { 'أ':'أواني', 'ب':'براد', 'ت':'تنجرة', 'ج':'جلاية', 'ح':'حوض غسيل', 'خ':'خلاط', 'د':'دورق', 'ر':'رفوف', 'ز':'زيت', 'س':'سكين', 'ش':'شوكة', 'ص':'صحن', 'ط':'طاولة', 'ع':'عصارة', 'غ':'غلاية', 'ف':'فرن', 'م':'ملعقة', 'ن':'ملاحة' },
+      "صفة حلوة أو شينة في البنادم": { 'أ':'أمين', 'ب':'بخيل', 'ت':'تسامح', 'ج':'جبان', 'ح':'حنون', 'خ':'خائن', 'د':'دقيق', 'ر':'رحيم', 'ز':'زاهد', 'س':'سموح', 'ش':'شجاع', 'ص':'صادق', 'ط':'طيب', 'ع':'عادل', 'غ':'غدار', 'ف':'فظ', 'م':'محترم', 'ن':'نذل' },
+      "شيء نلقوه في البحر أو الشاطئ": { 'أ':'أمواج', 'ب':'بحر', 'ت':'تراب', 'ج':'جمبري', 'ح':'حوت', 'خ':'خيمة', 'د':'دلفين', 'ر':'رمل', 'ز':'زوارق', 'س':'سلطعون', 'ش':'شمسية', 'ص':'صدف', 'ط':'طحالب', 'ع':'عوامة', 'غ':'غواص', 'ف':'فقمة', 'م':'مرجان', 'ن':'نورس' },
+      "مشروب بارد أو ساخن": { 'أ':'أناناس', 'ب':'بيبسي', 'ت':'توت', 'ج':'جوافة', 'ح':'حليب', 'خ':'خروب', 'د':'دارسين', 'ر':'رمان', 'ز':'زنجبيل', 'س':'سبرايت', 'ش':'شاهي', 'ص':'سحلب', 'ط':'طاقة', 'ع':'عصير', 'غ':'غازيات', 'ف':'فراولة', 'م':'ماء', 'ن':'نسكافيه' }
     };
 
     const CHAOS_CARDS = [
-      { id: 'statue', title: 'التمثال', desc: 'تجمّد مكانك وما تتحركش ولا تتكلم دور كامل! لو تحركت أو طلعت صوت تروح عليك النقطة.' },
-      { id: 'tongue', title: 'اللسان المربوط', desc: 'عض على لسانك وجاوب على الدور الجاي.. لو ضحكت أو ما فهموكش، النقطة تطير لغيرك.' },
-      { id: 'stealer', title: 'الفكاك', desc: 'سجل حضورك! الكرت هذا يخليك تفك الدور من صاحبك وتجاوب مكانه فوراً.' },
-      { id: 'radar', title: 'الرادار', desc: 'اختار واحد من المقمعزين واحظره؛ الدور الجاي يقعد يتفرج وممنوع يشارك أو يفتح فمه.' },
-      { id: 'bomb', title: 'القتالة ( القنبلة )', desc: 'الدور يعم الطاولة كلها! تلفوا بسرعة وكل واحد يعطي كلمة في ثانيتين، واللي يتلعثم أو يكرر يخسر.' },
+      { id: 'statue', title: 'التمثال', desc: 'تجمّد مكانك وما تتحركش ولا تتكلم دور كامل! لو تحركت تروح عليك النقطة.' },
+      { id: 'tongue', title: 'اللسان المربوط', desc: 'عض على لسانك وجاوب.. لو ضحكت أو ما فهموكش، النقطة تطير لغيرك.' },
+      { id: 'double', title: 'مضاعفة النقاط 🔥', desc: 'فرصة ذهبية! الإجابة الصحيحة في هذا الدور تعطيك نقطتين (+2) بدلاً من نقطة واحدة.' },
+      { id: 'radar', title: 'الرادار', desc: 'اختار واحد من المقمعزين واحظره؛ ممنوع يشارك أو يفتح فمه الدور الجاي.' },
+      { id: 'blitz', title: 'السرعة الفائقة ⚡', desc: 'الوقت ضيق جداً! العداد ينزل لـ 5 ثوانٍ فقط في هذا الدور.' },
       { id: 'swap', title: 'قلب السحر', desc: 'بدل نقاطك الحالية مع أكثر واحد مجمع نقاط على الطاولة وتكسب شوط جديد.' },
       { id: 'reverse', title: 'العكس', desc: 'اتجاه اللعب ينقلب 180 درجة! لو ماشي يمين يرجع يسار طول.' },
       { id: 'condition', title: 'الشرط الوعر', desc: 'لازم تبدأ إجابتك الجاية بكلمة "يا خوي" أو "يا حنة" وإلا إجابتك ملغية.' },
-      { id: 'tax', title: 'الضرائب (الإفلاس)', desc: 'حظك اليوم مش تمام! لازم ترجّع كرت من كروته الخضراء اللي ربحتها لأسفل المجموعة.' }
+      { id: 'tax', title: 'الضرائب (الإفلاس)', desc: 'حظك اليوم مش تمام! تخسر نقطة واحدة من نقاطك الحالية.' }
     ];
 
     function App() {
       const [players, setPlayers] = React.useState([]);
       const [newPlayerName, setNewPlayerName] = React.useState('');
       const [scores, setScores] = React.useState({});
-      
+      const [targetScore, setTargetScore] = React.useState(5); // الهدف التلقائي 5 نقاط
+      const [winner, setWinner] = React.useState(null);
+
       const [activePlayerIndex, setActivePlayerIndex] = React.useState(0);
       const [isReversed, setIsReversed] = React.useState(false);
 
@@ -120,6 +120,34 @@
         }
         return () => clearInterval(interval);
       }, [isTimerRunning, timer, gamePhase]);
+
+      // إطلاق الألعاب النارية عند وجود فائز
+      React.useEffect(() => {
+        if (winner && typeof confetti === 'function') {
+          const duration = 3 * 1000;
+          const end = Date.now() + duration;
+
+          const frame = () => {
+            confetti({
+              particleCount: 5,
+              angle: 60,
+              spread: 55,
+              origin: { x: 0 }
+            });
+            confetti({
+              particleCount: 5,
+              angle: 120,
+              spread: 55,
+              origin: { x: 1 }
+            });
+
+            if (Date.now() < end) {
+              requestAnimationFrame(frame);
+            }
+          };
+          frame();
+        }
+      }, [winner]);
 
       const addPlayer = () => {
         if (newPlayerName.trim() !== '') {
@@ -157,6 +185,7 @@
         setGamePhase('IDLE');
         setTimer(10);
         setShowSuggestion(false);
+        setActiveChaos(null);
       };
 
       const drawRound = () => {
@@ -171,28 +200,46 @@
         setCurrentCategory(selectedCategory);
         setCurrentLetter(LETTERS[Math.floor(Math.random() * LETTERS.length)]);
 
-        setTimer(10);
-        setGamePhase('PRIORITY');
-        setIsTimerRunning(true);
-        setShowSuggestion(false);
+        let initialTimer = 10;
 
         if (Math.random() < 0.25) {
           const randomChaos = CHAOS_CARDS[Math.floor(Math.random() * CHAOS_CARDS.length)];
           setActiveChaos(randomChaos);
           setShowChaosModal(true);
+          
           if (randomChaos.id === 'reverse') setIsReversed((prev) => !prev);
+          if (randomChaos.id === 'blitz') initialTimer = 5;
+          if (randomChaos.id === 'tax') {
+            const currentP = players[activePlayerIndex];
+            setScores((prev) => ({ ...prev, [currentP]: Math.max(0, (prev[currentP] || 0) - 1) }));
+          }
         } else {
           setShowChaosModal(false);
           setActiveChaos(null);
         }
+
+        setTimer(initialTimer);
+        setGamePhase('PRIORITY');
+        setIsTimerRunning(true);
+        setShowSuggestion(false);
       };
 
       const handleAwardPoint = (playerName) => {
+        const pointsToAdd = (activeChaos && activeChaos.id === 'double') ? 2 : 1;
+        const newScore = (scores[playerName] || 0) + pointsToAdd;
+
         setScores((prev) => ({
           ...prev,
-          [playerName]: (prev[playerName] || 0) + 1
+          [playerName]: newScore
         }));
-        advanceTurn();
+
+        // التحقق من شرط الفوز باللعبة
+        if (targetScore > 0 && newScore >= targetScore) {
+          setWinner(playerName);
+          setIsTimerRunning(false);
+        } else {
+          advanceTurn();
+        }
       };
 
       const handleNoWinner = () => {
@@ -200,6 +247,15 @@
           setCategoriesDeck((prev) => [...prev, currentCategory]);
         }
         advanceTurn();
+      };
+
+      const resetGame = () => {
+        setWinner(null);
+        setScores(players.reduce((acc, p) => ({ ...acc, [p]: 0 }), {}));
+        setGamePhase('IDLE');
+        setCurrentCategory(null);
+        setCurrentLetter(null);
+        setActiveChaos(null);
       };
 
       const getSuggestedAnswer = () => {
@@ -214,7 +270,23 @@
         <div className="min-h-screen p-4 flex flex-col items-center justify-between max-w-xl mx-auto">
           {/* الهيدر */}
           <header className="w-full text-center my-2">
-            <h1 className="text-3xl font-extrabold text-amber-400 mb-2">🎲 كارت وكلمة</h1>
+            <h1 className="text-3xl font-extrabold text-amber-400 mb-1">🎲 كارت وكلمة</h1>
+            
+            {/* اختيار هدف نقاط الفوز */}
+            <div className="flex items-center justify-center gap-2 mb-3 text-xs text-slate-300">
+              <span>هدف الفوز:</span>
+              <select
+                value={targetScore}
+                onChange={(e) => setTargetScore(Number(e.target.value))}
+                className="bg-slate-800 border border-slate-600 rounded px-2 py-0.5 text-amber-300 font-bold"
+              >
+                <option value={3}>3 نقاط (سريع)</option>
+                <option value={5}>5 نقاط (قياسي)</option>
+                <option value={10}>10 نقاط (طويل)</option>
+                <option value={0}>بدون حد (مفتوح)</option>
+              </select>
+            </div>
+
             {players.length > 0 && (
               <div className="bg-slate-800 p-3 rounded-xl border border-slate-700 flex justify-between items-center text-sm">
                 <span className="text-gray-400">الدور الحالي:</span>
@@ -224,7 +296,7 @@
             )}
           </header>
 
-          {/* محتوى اللعبة */}
+          {/* محتوى اللعبة الرئيسي */}
           {players.length === 0 ? (
             <div className="bg-slate-800 border border-slate-700 p-6 rounded-2xl w-full text-center my-auto">
               <h2 className="text-xl font-bold text-amber-300 mb-3">أضف اللاعبين للبدء 👥</h2>
@@ -252,6 +324,13 @@
                   <span className="text-5xl font-black text-amber-300">{currentLetter || "؟"}</span>
                 </div>
               </div>
+
+              {/* التنبيه بوجود كرت فوضى نشط */}
+              {activeChaos && (
+                <div className="bg-red-950/80 border border-red-500/80 text-red-200 text-xs p-2 rounded-lg text-center font-bold animate-pulse">
+                  🃏 كرت الفوضى المفعّل: <span className="text-amber-300">{activeChaos.title}</span> ({activeChaos.desc})
+                </div>
+              )}
 
               {/* زر ومساحة الاقتراح المباشر */}
               {currentCategory && (
@@ -288,7 +367,7 @@
               {gamePhase === 'PRIORITY' && (
                 <button
                   onClick={() => { setIsTimerRunning(false); setGamePhase('DECISION_PRIORITY'); }}
-                  className="w-full bg-blue-600 hover:bg-blue-500 font-bold py-3 rounded-xl"
+                  className="w-full bg-blue-600 hover:bg-blue-500 font-bold py-3 rounded-xl shadow-lg"
                 >
                   حسم الإجابة ⏱️
                 </button>
@@ -302,7 +381,7 @@
                       onClick={() => handleAwardPoint(players[activePlayerIndex])}
                       className="flex-1 bg-emerald-600 hover:bg-emerald-500 font-bold py-2 rounded-lg"
                     >
-                      نعم (+1 نقطة) 👍
+                      نعم ({(activeChaos && activeChaos.id === 'double') ? '+2 نقطة 🔥' : '+1 نقطة 👍'})
                     </button>
                     <button
                       onClick={() => setGamePhase('DECISION_OPEN')}
@@ -339,7 +418,7 @@
 
               {gamePhase === 'IDLE' && (
                 <div className="flex gap-2">
-                  <button onClick={drawRound} className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl">
+                  <button onClick={drawRound} className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl shadow-lg">
                     🎴 سحب دور جديد
                   </button>
                   <button onClick={advanceTurn} className="bg-slate-700 hover:bg-slate-600 text-white font-semibold px-4 py-3 rounded-xl">
@@ -350,14 +429,34 @@
             </main>
           )}
 
-          {/* كروت الفوضى */}
+          {/* نافذة كرت الفوضى Popup */}
           {showChaosModal && activeChaos && (
             <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
-              <div className="bg-[#800000] border-2 border-red-500 rounded-2xl p-5 max-w-xs w-full text-center">
+              <div className="bg-[#800000] border-2 border-red-500 rounded-2xl p-5 max-w-xs w-full text-center shadow-2xl">
                 <h2 className="text-xl font-bold text-amber-300 mb-2">🃏 {activeChaos.title}</h2>
                 <p className="text-sm bg-red-950/50 p-2 rounded mb-4">{activeChaos.desc}</p>
                 <button onClick={() => setShowChaosModal(false)} className="w-full bg-amber-400 text-slate-950 font-bold py-2 rounded-lg">
                   موافق 👍
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* شاشة التتويج والاحتفال بالفائز 🎉 */}
+          {winner && (
+            <div className="fixed inset-0 bg-black/90 flex items-center justify-center p-4 z-50">
+              <div className="bg-slate-800 border-2 border-amber-400 rounded-2xl p-6 max-w-sm w-full text-center shadow-2xl">
+                <div className="text-6xl mb-3">🏆 🎉</div>
+                <h2 className="text-2xl font-black text-amber-400 mb-1">مبروووك الفوز!</h2>
+                <p className="text-lg text-emerald-400 font-extrabold mb-4">{winner}</p>
+                <p className="text-sm text-slate-300 mb-6">
+                  وصل إلى <span className="text-amber-300 font-bold">{scores[winner]} نقاط</span> وحسم اللعبة بجدارة!
+                </p>
+                <button
+                  onClick={resetGame}
+                  className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl text-lg shadow-lg"
+                >
+                  لعب شوط جديد 🔄
                 </button>
               </div>
             </div>
@@ -386,7 +485,7 @@
                 >
                   <span>{p}</span>
                   <span className="bg-amber-400 text-slate-950 px-1.5 py-0.5 rounded-full text-[10px] font-black">
-                    {scores[p] || 0} pts
+                    {scores[p] || 0} / {targetScore > 0 ? targetScore : '∞'}
                   </span>
                   <button
                     onClick={() => removePlayer(p)}
